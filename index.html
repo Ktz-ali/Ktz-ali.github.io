@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APK随机分发下载</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #3498db, #2c3e50);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 28px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .description {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+            font-size: 16px;
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 18px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            width: 100%;
+            max-width: 280px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
+        }
+        
+        .download-btn:active {
+            transform: translateY(0);
+        }
+        
+        .download-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .download-btn i {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        .status-container {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .status {
+            font-size: 16px;
+            color: #2c3e50;
+            min-height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+            font-weight: 500;
+        }
+        
+        .download-count {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #7f8c8d;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .contact-info {
+            margin-top: 20px;
+            padding: 18px;
+            background-color: #e8f4fc;
+            border: 1px solid #b3e0ff;
+            border-radius: 10px;
+            color: #2c3e50;
+            display: none;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .contact-info a {
+            color: #3498db;
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .contact-info a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+        
+        .features {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .feature {
+            padding: 15px;
+            flex: 1;
+            min-width: 120px;
+            transition: transform 0.3s;
+        }
+        
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px 15px;
+            border: 1px solid #e9ecef;
+            height: 100%;
+        }
+        
+        .feature i {
+            font-size: 28px;
+            color: #3498db;
+            margin-bottom: 12px;
+        }
+        
+        .feature p {
+            font-size: 14px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        .confirmation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .modal-content h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+        
+        .modal-content p {
+            color: #7f8c8d;
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
+        
+        .apk-name {
+            color: #3498db;
+            font-weight: 600;
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+        
+        .modal-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            flex: 1;
+            margin: 0 5px;
+        }
+        
+        .confirm-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .confirm-btn:hover {
+            background: linear-gradient(135deg, #2980b9, #2471a3);
+        }
+        
+        .cancel-btn {
+            background: #f8f9fa;
+            color: #7f8c8d;
+            border: 1px solid #e9ecef;
+        }
+        
+        .cancel-btn:hover {
+            background: #e9ecef;
+        }
+        
+        .downloaded-list {
+            margin-top: 20px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .downloaded-list h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .downloaded-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .downloaded-item {
+            background: #3498db;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            .download-btn {
+                padding: 16px 30px;
+                font-size: 16px;
+            }
+            
+            .modal-content {
+                padding: 25px 20px;
+            }
+            
+            .features {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>APK随机分发下载</h1>
+        <p class="description">点击下载按钮随机获取应用版本，每个版本仅可下载一次，确保您获得不同的体验</p>
+        
+        <button class="download-btn" id="downloadBtn">
+            <i class="fas fa-download"></i> 下载应用
+        </button>
+        
+        <div class="status-container">
+            <div class="status" id="status">
+                准备下载，请点击上方按钮
+            </div>
+            <div class="download-count" id="downloadCount">
+                已下载: 0/15
+            </div>
+        </div>
+        
+        <div class="downloaded-list" id="downloadedList">
+            <h3>已下载版本</h3>
+            <div class="downloaded-items" id="downloadedItems">
+                <!-- 已下载的APK将在这里显示 -->
+            </div>
+        </div>
+        
+        <div class="contact-info" id="contactInfo">
+            <i class="fas fa-info-circle"></i> 所有版本均已下载完成，如需更新版本请 <a href="#" id="contactLink">联系作者</a>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-card">
+                    <i class="fas fa-shield-alt"></i>
+                    <p>安全可靠</p>
+                </div>
+            </div>
+            <div class="feature">
+                <div class="feature-card">
+                    <i class="fas fa-bolt"></i>
+                    <p>快速下载</p>
+                </div>
+            </div>
+            <div class="feature">
+                <div class="feature-card">
+                    <i class="fas fa-sync"></i>
+                    <p>随机版本</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认下载模态框 -->
+    <div class="confirmation-modal" id="confirmationModal">
+        <div class="modal-content">
+            <h3>确认下载</h3>
+            <p>您将下载以下应用版本：</p>
+            <div class="apk-name" id="apkName">app1.apk</div>
+            <p>此版本下载后将不再提供，确定要继续吗？</p>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel-btn" id="cancelBtn">取消</button>
+                <button class="modal-btn confirm-btn" id="confirmBtn">确认下载</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const downloadBtn = document.getElementById('downloadBtn');
+            const status = document.getElementById('status');
+            const downloadCount = document.getElementById('downloadCount');
+            const confirmationModal = document.getElementById('confirmationModal');
+            const apkName = document.getElementById('apkName');
+            const confirmBtn = document.getElementById('confirmBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const contactInfo = document.getElementById('contactInfo');
+            const contactLink = document.getElementById('contactLink');
+            const downloadedItems = document.getElementById('downloadedItems');
+            
+            // 初始化已下载的APK列表
+            let downloadedAPKs = JSON.parse(localStorage.getItem('downloadedAPKs')) || [];
+            let selectedAPK = null;
+            
+            // 更新下载计数显示
+            updateDownloadCount();
+            
+            // 更新已下载列表显示
+            updateDownloadedList();
+            
+            // 检查是否所有APK都已下载
+            checkIfAllDownloaded();
+            
+            // 下载按钮点击事件
+            downloadBtn.addEventListener('click', function() {
+                // 检查是否所有APK都已下载过
+                if (downloadedAPKs.length >= 15) {
+                    status.textContent = "所有版本均已下载完成";
+                    contactInfo.style.display = 'block';
+                    return;
+                }
+                
+                // 从未下载的APK中随机选择一个
+                const availableAPKs = [];
+                for (let i = 1; i <= 15; i++) {
+                    if (!downloadedAPKs.includes(i)) {
+                        availableAPKs.push(i);
+                    }
+                }
+                
+                const randomIndex = Math.floor(Math.random() * availableAPKs.length);
+                selectedAPK = availableAPKs[randomIndex];
+                
+                // 显示确认模态框
+                apkName.textContent = `app${selectedAPK}.apk`;
+                confirmationModal.style.display = 'flex';
+            });
+            
+            // 确认下载按钮点击事件
+            confirmBtn.addEventListener('click', function() {
+                confirmationModal.style.display = 'none';
+                
+                // 禁用按钮防止重复点击
+                downloadBtn.disabled = true;
+                
+                // 添加到已下载列表
+                downloadedAPKs.push(selectedAPK);
+                localStorage.setItem('downloadedAPKs', JSON.stringify(downloadedAPKs));
+                
+                // 更新状态
+                status.textContent = `正在下载 app${selectedAPK}.apk...`;
+                
+                // 执行下载
+                executeDownload(selectedAPK);
+            });
+            
+            // 取消下载按钮点击事件
+            cancelBtn.addEventListener('click', function() {
+                confirmationModal.style.display = 'none';
+                status.textContent = "下载已取消";
+                selectedAPK = null;
+            });
+            
+            // 执行下载
+            function executeDownload(apkNumber) {
+                // 创建虚拟下载链接
+                const downloadLink = document.createElement('a');
+                downloadLink.href = `APK/app${apkNumber}.apk`;
+                downloadLink.download = `app${apkNumber}.apk`;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                
+                // 更新状态
+                status.textContent = `下载完成: app${apkNumber}.apk`;
+                updateDownloadCount();
+                updateDownloadedList();
+                checkIfAllDownloaded();
+                
+                // 重新启用按钮（如果还有可下载的APK）
+                if (downloadedAPKs.length < 15) {
+                    downloadBtn.disabled = false;
+                }
+                
+                // 模拟清理APK文件（实际中这需要后端支持）
+                console.log(`APK/app${apkNumber}.apk 已标记为已下载，不再提供下载`);
+            }
+            
+            // 更新下载计数
+            function updateDownloadCount() {
+                downloadCount.textContent = `已下载: ${downloadedAPKs.length}/15`;
+            }
+            
+            // 更新已下载列表
+            function updateDownloadedList() {
+                downloadedItems.innerHTML = '';
+                downloadedAPKs.forEach(apk => {
+                    const item = document.createElement('div');
+                    item.className = 'downloaded-item';
+                    item.textContent = `app${apk}.apk`;
+                    downloadedItems.appendChild(item);
+                });
+            }
+            
+            // 检查是否所有APK都已下载
+            function checkIfAllDownloaded() {
+                if (downloadedAPKs.length >= 15) {
+                    contactInfo.style.display = 'block';
+                    downloadBtn.disabled = true;
+                    status.textContent = "所有版本均已下载完成";
+                } else {
+                    contactInfo.style.display = 'none';
+                    downloadBtn.disabled = false;
+                }
+            }
+            
+            // 联系作者链接点击事件
+            contactLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                alert("如需更新版本，请联系管理员添加新的APK文件");
+            });
+        });
+    </script>
+</body>
+</html>
